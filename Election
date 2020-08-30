@@ -1,0 +1,126 @@
+ pragma solidity >=0.4.22 <0.7.0;
+ contract Election{
+     
+     // struct voters
+     struct svoter{
+         address voter_address;// string id
+         uint mark;
+     }
+     
+     // struct candidate
+     struct scandidate {
+        string id;
+        string name;
+        uint count;
+    }
+    
+    //constructor
+    
+    address owner;
+    uint depolytime;
+    uint deadline;
+
+    // This is the constructor which registers the
+    
+    constructor() public{
+        owner = msg.sender;
+        depolytime = now;
+    }
+    
+   // guarantee_time
+    function deadline_time (uint guarantee_time) public returns (uint deadline_uinx){
+        deadline = guarantee_time + now;
+        deadline_uinx = deadline;
+    }
+    
+    // state variables
+    uint voter_count;
+    uint candidate_count;
+    uint voted_count;
+    string timestamp;
+    // 
+    mapping (uint => svoter) voter;
+    mapping (uint => scandidate) candidate;
+    
+   
+    
+    // add voters
+    function add_voter(address voter_address, string calldata name) external returns (string memory state, uint count){
+        require (msg.sender == owner);
+        voter_count ++;
+        voter[voter_count].voter_address = voter_address;
+        voter[voter_count].mark = 0;
+        state = "Add voters successfully";
+        count = voter_count;
+    }
+    
+    // add candidates
+    
+    function add_candidate(string calldata id, string calldata name) external returns (string memory state, uint count){
+        require (msg.sender == owner);
+        candidate_count ++;
+        candidate[candidate_count].id = id;
+        candidate[candidate_count].name = name;
+        state = "Add voters successfully";
+        count = candidate_count;
+    }
+    
+    // verify voters
+    
+    function verify () internal returns (bool state){
+        address msg_address = msg.sender;
+
+        for(uint i = 0;i < voter_count;i++){
+            address voter_address = voter[i+1].voter_address;
+            if(msg_address == voter_address && voter[i+1].mark == 0){
+                state = true;
+                voter[i+1].mark = 1;
+            }
+        }
+    }
+    
+    // vote
+    
+    function vote (string memory candidate_id) public returns(string memory state){
+        require (now <= deadline);
+        // verify
+        if(verify()){
+            for(uint i = 0;i < candidate_count;i++){
+                if(keccak256(abi.encodePacked((candidate[i].id))) == keccak256(abi.encodePacked((candidate_id)))){
+                    candidate[i].count ++;
+                    state = "voted successfully";
+                }
+            }
+        }
+        else{
+            state = "Authority error";
+        }
+    }
+    
+    // view the result
+    
+    function winner () public returns (string memory id, string memory name, uint count){
+      uint winner = 0;
+      
+      for (uint i = 0; i < candidate_count; i++){
+          uint temp = candidate[i+1].count;
+          for(uint j = 0;j < candidate_count;j++){
+              if(j != i){
+                  if(temp > candidate[j+1].count){
+                      winner++;
+                      if(winner == candidate_count - 1){
+                          id = candidate[i+1].id;
+                          name = candidate[i+1].name;
+                          count = candidate[i+1].count;
+                          break;
+                      }
+                  }
+              }
+          }
+      }
+      
+      id = "no winner, there are more than two candidates have the same count";
+      
+    }
+
+ }
